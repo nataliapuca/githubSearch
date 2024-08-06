@@ -19,9 +19,13 @@ module.exports = {
   },
   plugins: ['react', 'import', 'jsx-a11y'],
   rules: {
-    // Add custom rules here
     'react/prop-types': 'off',
     'import/no-unresolved': 'error',
     'jsx-a11y/anchor-is-valid': 'warn',
+  },
+  settings: {
+    react: {
+      version: 'detect', // Automatically detect the React version
+    },
   },
 }
