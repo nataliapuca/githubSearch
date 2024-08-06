@@ -1,0 +1,29 @@
+# Katalogi zależności
+node_modules
+
+# Katalogi generowane
+.expo
+.expo-shared
+
+# Pliki wynikowe kompilacji
+dist
+build
+
+# Pliki i katalogi związane z testami
+coverage
+
+# Pliki konfiguracyjne
+*.config.js
+*.config.ts
+
+# Pliki typu cache
+.cache
+
+# Pliki ignorowane przez Git
+.git
+.gitignore
+
+# Pliki zawierające mapy źródeł
+*.map
+
+# Wszelkie inne pliki i katalogi, które nie powinny być formatowane
