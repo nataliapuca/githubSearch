@@ -1,52 +1,123 @@
-import { Image, StyleSheet, Platform } from 'react-native'
+import {
+  TextInput,
+  FlatList,
+  View,
+  Text,
+  Pressable,
+  ImageBackground,
+} from 'react-native'
 
 import { HelloWave } from '@/components/HelloWave'
-import ParallaxScrollView from '@/components/ParallaxScrollView'
 import { ThemedText } from '@/components/ThemedText'
-import { ThemedView } from '@/components/ThemedView'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { UserBar } from '@/components/UserBar'
+import { styles } from '@/styles'
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>Edit</ThemedText>
-        <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>
-        <ThemedText type="defaultSemiBold">
-          {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  )
+export type User = {
+  login: string
+  id: number
+  avatar_url: string
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-})
+export default function HomeScreen() {
+  const [userQuery, setUserQuery] = useState('')
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isNoResults, setIsNoResults] = useState<boolean>(false)
+  const [lastQuery, setLastQuery] = useState('')
+  const [errorMessege, setErrorMessage] = useState<string>('')
+
+  useEffect(() => {
+    userQuery == '' && setIsNoResults(false)
+  }, [userQuery])
+
+  useEffect(() => {
+    isLoading && setErrorMessage('')
+  }, [isLoading])
+
+  const getUsers = async (query: String) => {
+    setIsLoading(true)
+    setLastQuery(userQuery)
+    try {
+      const res = await axios.get(
+        `https://api.github.com/search/users?q=${query}`,
+      )
+      setUsers(res.data.items.slice(0, 5))
+      setIsNoResults(res.data.items.length == 0)
+    } catch (error) {
+      setIsNoResults(true)
+      setErrorMessage('Sorry, smething went wrong')
+      console.log(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const listUsers = () => {
+    return (
+      <FlatList
+        data={users}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => <UserBar user={item} />}
+      />
+    )
+  }
+
+  function renderResults() {
+    if (isLoading) {
+      return <Text style={styles.loadingText}>Loading...</Text>
+    } else if (!isNoResults) {
+      return <>{listUsers()}</>
+    } else {
+      return (
+        <>
+          <Text style={styles.loadingText}>no results for '{lastQuery}'</Text>
+          {errorMessege && (
+            <Text style={styles.loadingText}>{errorMessege}</Text>
+          )}
+        </>
+      )
+    }
+  }
+
+  return (
+    <>
+      <SafeAreaView style={styles.mainArea}>
+        <ImageBackground
+          resizeMode="contain"
+          source={require('@/assets/images/pngwing.com.png')}
+          style={styles.basicSmall}
+        />
+        <View style={styles.basicLarge}>
+          <View style={styles.titleContainer}>
+            <ThemedText type="title">Github search</ThemedText>
+            <HelloWave />
+          </View>
+          <View style={styles.stepContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter username to start"
+              placeholderTextColor="gray"
+              onChangeText={(newText) => setUserQuery(newText)}
+              defaultValue={userQuery}
+            />
+            <Pressable
+              role="button"
+              style={[
+                styles.searchButton,
+                (!userQuery || isLoading) && styles.searchButtonDisabled,
+              ]}
+              disabled={!userQuery || isLoading}
+              onPress={() => getUsers(userQuery)}
+            >
+              <ThemedText type="defaultSemiBold">search</ThemedText>
+            </Pressable>
+            {renderResults()}
+          </View>
+        </View>
+      </SafeAreaView>
+    </>
+  )
+}
